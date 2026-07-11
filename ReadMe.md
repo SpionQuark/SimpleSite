@@ -95,9 +95,19 @@ To distinguish those three types, SimpleSite checks if the source is a file. If 
 ``super duper route to my site``<br> will be parsed  as<br>``/super-duper-route-to-my-site``.
 
 ---
-Hosts with the ``secure=True`` attribute will require being logged in. For that one has to create a ``.env``-file within the project directory.
+Hosts with the ``secure=True`` attribute will require being logged in. For that one has to create a ``.env``-file within the project directory (see [Auth / login](#auth--login) below), and ``html`` has to point at a real template file rather than a raw string or directory.
 
+### `app.createLogin(route: str, html: str = None, admin: bool = False)`
 
+Registers a login endpoint at ``route``: `GET` serves the login form, `POST` checks the submitted `user` / `password` form fields and, on success, logs the user in.
+
+- ``html``: optional path to a custom login-page template. If omitted, a minimal built-in form is served.
+- Requires auth to be configured (see below) — raises if `DEF_USER`/`DEF_PASS`/`SECRET_KEY` aren't set.
+
+```python
+app.createLogin("/login")
+app.hostStatic("/dashboard", "dashboard.html", secure=True)
+```
 
 ### ``app.run(host="127.0.0.1", port=5000)``
 
@@ -145,14 +155,32 @@ Content for ``.env``:
 ```.env
 DEF_USER='Admin-Username'
 DEF_PASS='super-secure-admin-pass'
+SECRET_KEY='some-long-random-string'
 USE_DB=True
 ```
 
 | Fieldname | What it is used for | IsRequired | What happens without? |
 | --------- | ------------------- | ---------- | --------------------- |
-| DEF_USER  | The username you need for any login added using SimpleSite | False | The secure-flag for the endpoints is not added, resulting in insecure endpoints |
-| DEF_PASS  | The password you need for any login added using SimpleSite | False | The secure-flag for the endpoints is not added, resulting in insecure endpoints |
-| USE_DB | Determine if the DB should be used | False | The database won't be used. However, if ``DEF_PASS`` and ``DEF_USER`` are given it uses plain-text comparison. With DB a Argon2 hash will be used.
+| DEF_USER  | The username you need for any login added using SimpleSite | False | Auth is considered disabled: `createLogin()` and `secure=True` both raise, since there's no login to check against |
+| DEF_PASS  | The password you need for any login added using SimpleSite | False | Same as above |
+| SECRET_KEY | Signs the login session cookie (via `quart-auth`) | Only if `DEF_USER`/`DEF_PASS` are set | The app refuses to start (`RuntimeError`) — a login without a secret key can't be trusted |
+| USE_DB | Determine if the DB should be used | False | The database won't be used. However, if ``DEF_PASS`` and ``DEF_USER`` are given it uses plain-text comparison. With DB an Argon2 hash will be used.
+
+## Auth / login
+
+Set `DEF_USER` and `DEF_PASS` in `.env` to turn auth on. Once that's done, `SECRET_KEY` becomes required too — SimpleSite raises at startup if it's missing, rather than starting up with an insecure or broken login.
+
+```python
+from SimpleSite.easyhost import App
+
+app = App()
+app.createLogin("/login")
+app.hostStatic("/", "index.html")
+app.hostStatic("/admin", "admin.html", secure=True)
+app.run(port=8000)
+```
+
+Without `USE_DB`, credentials are checked directly against `DEF_USER`/`DEF_PASS`. With `USE_DB=True`, credentials are checked against the database instead (Argon2-hashed).
 
 
 ### Project built with SimpleSite
@@ -179,7 +207,7 @@ from SimpleSite.easyhost import App
 - [ ]  hostFolder(): auto-map an entire directory to routes, file-based-routing style
 - [ ] Dev mode with live reload
 - [ ] Config file support for error template overrides
-- [ ] Login-Templating
+- [x] Login-Templating (`createLogin(html=...)`)
 
 
 
