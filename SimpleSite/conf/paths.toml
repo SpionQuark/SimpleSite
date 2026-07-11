@@ -1,0 +1,4 @@
+[required_paths]
+static = "/static"
+templates = "/templates"
+
