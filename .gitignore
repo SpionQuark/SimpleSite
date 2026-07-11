@@ -1,0 +1,4 @@
+__pycache__/
+.env
+database_handler.py
+database_helper.py

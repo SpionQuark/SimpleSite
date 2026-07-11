@@ -1,14 +1,19 @@
 import os
 import quart
 from SimpleSite.error_registry import ErrorRegistry
+# import SimpleSite.database_helper as dh
+from dotenv import load_dotenv
+from os import getenv
+load_dotenv()
 
 class App:
-
 
     def __init__(self):
         self.app = quart.Quart(__name__)
         self.quart = quart
         self.error_registry = ErrorRegistry(self.app, self.quart)
+        self.auth = False
+        
 
     def hostStatic(self, route: str, html: str, secure: bool = False):
         """
@@ -37,14 +42,12 @@ class App:
                 return await self.quart.render_template_string(html)
             self.app.add_url_rule(route, route, view)
 
-    def createLogin(def_user: str = None, def_pass: str = None, use_dotenv: bool = False):
-        if use_dotenv:
-            from dotenv import load_dotenv
-            from os import getenv
-            load_dotenv()
-            def_user = load_dotenv("def_user")
-            def_pass = load_dotenv("def_pass")
-        
+    # def createLogin(def_user: str = None, def_pass: str = None, use_dotenv: bool = False):
+    #     if use_dotenv:
+            
+    #         def_user = load_dotenv("DEF_USER")
+    #         def_pass = load_dotenv("DEF_PASS")
+
 
 
     def _init_necessary_paths(self):
@@ -64,6 +67,16 @@ class App:
         import os
         print(os.getcwd())
         self._init_necessary_paths()
+
+        # @self.app.before_serving()
+        # async def initRequirements():
+        #     db_flag = getenv("USE_DB", False)
+        #     use_auth = (getenv("DEF_USER") and getenv("DEF_PASS"))
+        #     if db_flag == True:
+        #         dh.start()
+        #     self.auth == use_auth
+
+
         from uvicorn import run
         run(self.app, host=host, port=port)
 

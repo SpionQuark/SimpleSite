@@ -1,0 +1,5 @@
+quart
+uvicorn
+python-dotenv
+aiosqlite
+argon2-cffi
