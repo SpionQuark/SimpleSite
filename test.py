@@ -2,7 +2,7 @@ from SimpleSite.easyhost import App
 
 app = App()
 
-app.createLogin("/login")
+app.createLogin("/login", "login.html")
 
 app.hostStatic("/", "<h1>Index</h1>")
 

@@ -1,4 +1,5 @@
 import os
+import sys
 import quart
 from quart_auth import QuartAuth, AuthUser, login_required, login_user
 from SimpleSite.error_registry import ErrorRegistry
@@ -6,6 +7,18 @@ import SimpleSite.database_helper as dh
 from dotenv import load_dotenv
 from os import getenv
 load_dotenv()
+
+
+def _caller_templates_dir() -> str:
+    """
+    Resolve the templates folder relative to the script that's actually being
+    run (e.g. test.py), not relative to this module's location inside the
+    SimpleSite package.
+    """
+    main_module = sys.modules.get("__main__")
+    main_file = getattr(main_module, "__file__", None)
+    base_dir = os.path.dirname(os.path.abspath(main_file)) if main_file else os.getcwd()
+    return os.path.join(base_dir, "templates")
 
 
 def _env_flag(name: str, default: bool = False) -> bool:
@@ -18,7 +31,7 @@ def _env_flag(name: str, default: bool = False) -> bool:
 class App:
 
     def __init__(self):
-        self.app = quart.Quart(__name__)
+        self.app = quart.Quart(__name__, template_folder=_caller_templates_dir())
         self.quart = quart
         self.db_flag = _env_flag("USE_DB")
         self.auth = bool(getenv("DEF_USER")) and bool(getenv("DEF_PASS"))
@@ -38,8 +51,6 @@ class App:
         """
         A function to host a static page. Can be secure but requires
         the setup of a login which can be created using ``createLogin()``
-
-        The use of secure also requires html to be a file
 
         param route: The route of the endpoint (example.com/<route>)
         param html: Either the path to the file, raw html or a directory
@@ -117,7 +128,7 @@ class App:
                 return self.quart.abort(401)
 
             login_user(AuthUser(luser))
-            return self.quart.redirect("/")
+            return self.quart.redirect(referal)
 
         self.app.add_url_rule(route, f"{route}_login_get", login_page, methods=["GET"])
         self.app.add_url_rule(route, f"{route}_login_post", login, methods=["POST"])
@@ -137,8 +148,7 @@ class App:
         param port: The port to run the app on. Default is 5000.
         param debug: Whether to run the app in debug mode. Default is True.
         """
-        import os
-        print(os.getcwd())
+
         self._init_necessary_paths()
 
         @self.app.before_serving
