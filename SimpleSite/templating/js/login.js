@@ -1,3 +1,9 @@
+/* Usage:
+*
+*   <login-form><login-form>
+*
+*/
+
 customElements.define(
     "login-form",
     class LoginForm extends HTMLElement {

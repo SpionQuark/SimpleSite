@@ -38,3 +38,10 @@ class ErrorRegistry:
                 if use_custom:
                     return await self.quart.render_template(f"{code}.html"), code
                 return self.error_templates[code], code
+            
+
+
+class DatabaseNotAllowedError (Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.error = "Usage of database not permitted in .env"

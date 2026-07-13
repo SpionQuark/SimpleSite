@@ -1,2 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quart-simplesite"
+version = "0.1.1"
+description = "Host a website in three lines of Python. A thin, ergonomic layer over Quart."
+readme = "ReadMe.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "SpionQuark", email = "quirin.weber@sollerto.de" },
+]
+dependencies = [
+    "quart",
+    "quart-auth",
+    "uvicorn",
+    "python-dotenv",
+    "aiosqlite",
+    "argon2-cffi",
+]
+
+[project.urls]
+Homepage = "https://github.com/SpionQuark/SimpleSite"
+
+# The distribution is published as "quart-simplesite" (the name "SimpleSite" was
+# already taken on PyPI), but the importable package stays "SimpleSite" so
+# existing code (`from SimpleSite.easyhost import App`) keeps working unchanged.
+[tool.setuptools]
+packages = ["SimpleSite"]
+package-dir = { "SimpleSite" = "." }
+
 [tool.setuptools.package-data]
-SimpleSite = ["static/**/*", "templates/**/*"]
+SimpleSite = ["templating/**/*", "conf/**/*"]

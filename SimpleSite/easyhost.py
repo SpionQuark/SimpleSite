@@ -2,12 +2,18 @@ import os
 import sys
 import quart
 from quart_auth import QuartAuth, AuthUser, login_required, login_user
-from SimpleSite.error_registry import ErrorRegistry
+from SimpleSite.error_registry import ErrorRegistry, DatabaseNotAllowedError
 import SimpleSite.database_helper as dh
 from dotenv import load_dotenv
 from os import getenv
 load_dotenv()
 
+TYPE_MAP = {
+    str   : "text",
+    int   : "number",
+    float : "number",
+    bool  : "checkbox"
+}
 
 def _caller_templates_dir() -> str:
     """
@@ -119,6 +125,9 @@ class App:
             luser = form.get("user")
             lpassword = form.get("password")
 
+            # Login form → submit → rerouted/logged in
+            # Login form → submit → send response email → new database entry → ...
+
             if not luser or not lpassword:
                 return self.quart.abort(400)
 
@@ -142,8 +151,12 @@ class App:
             return self.quart.abort(404)
 
     
-    def createForm(self):
-        pass
+    def createForm(self, endpoint:str, **kwargs):
+        if not self.db_flag:
+            raise DatabaseNotAllowedError("Can't create a form without database usage allowed!")
+        def parseArgsToSchema(**kwargs):
+            fields = []
+        return
 
     def run(self, host='127.0.0.1', port=5000):
         """
@@ -167,10 +180,11 @@ class App:
         self.app.register_blueprint(bp_scripts)
 
         @self.app.context_processor
-        def inject_simplesite_assets():
+        def inject_simplesite_assets() -> dict[str, str]:
             from quart import url_for
             return {
-                "login": url_for("script_inject.static", filename="js/login.js")
+                "login": url_for("script_inject.static", filename="js/login.js"),
+                "auto_form": url_for("script_inject.static", filename="js/auto-form.js")
             }
 
         from uvicorn import run
