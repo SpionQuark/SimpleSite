@@ -69,7 +69,10 @@ class App:
         else:
             @login_required
             async def view(html=html):
-                return await self.quart.render_template(html)
+                try:
+                    return await self.quart.render_template(html)
+                except:
+                    return self.quart.Markup(html)
         self.app.add_url_rule(route, route, view)
 
     def createLogin(self, route: str, html: str = None, referal: str = "/"):
@@ -117,7 +120,7 @@ class App:
                 return self.quart.abort(401)
 
             login_user(AuthUser(luser))
-            return self.quart.redirect("/")
+            return self.quart.redirect(f"{referal if referal.startswith('/') else '/'+referal}")
 
         self.app.add_url_rule(route, f"{route}_login_get", login_page, methods=["GET"])
         self.app.add_url_rule(route, f"{route}_login_post", login, methods=["POST"])
@@ -128,7 +131,8 @@ class App:
             return self.quart.abort(404)
 
     
-
+    def createForm(self):
+        pass
 
     def run(self, host='127.0.0.1', port=5000):
         """
