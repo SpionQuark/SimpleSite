@@ -1,4 +1,4 @@
-import os
+import os, json
 import sys
 import quart
 from quart_auth import QuartAuth, AuthUser, login_required, login_user
@@ -15,16 +15,16 @@ TYPE_MAP = {
     bool  : "checkbox"
 }
 
-def _caller_templates_dir() -> str:
+def _caller_dir(dir:str="templates") -> str:
     """
-    Resolve the templates folder relative to the script that's actually being
+    Resolve the given folder relative to the script that's actually being
     run (e.g. test.py), not relative to this module's location inside the
     SimpleSite package.
     """
     main_module = sys.modules.get("__main__")
     main_file = getattr(main_module, "__file__", None)
     base_dir = os.path.dirname(os.path.abspath(main_file)) if main_file else os.getcwd()
-    return os.path.join(base_dir, "templates")
+    return os.path.join(base_dir, dir)
 
 
 def _env_flag(name: str, default: bool = False) -> bool:
@@ -37,7 +37,7 @@ def _env_flag(name: str, default: bool = False) -> bool:
 class App:
 
     def __init__(self):
-        self.app = quart.Quart(__name__, template_folder=_caller_templates_dir())
+        self.app = quart.Quart(__name__, template_folder=_caller_dir(), static_folder=_caller_dir("static"))
         self.quart = quart
         self.db_flag = _env_flag("USE_DB")
         self.auth = bool(getenv("DEF_USER")) and bool(getenv("DEF_PASS"))
@@ -151,12 +151,55 @@ class App:
             return self.quart.abort(404)
 
     
-    def createForm(self, endpoint:str, **kwargs):
+    def createForm(self, route:str, html: str = None, **kwargs):
         if not self.db_flag:
-            raise DatabaseNotAllowedError("Can't create a form without database usage allowed!")
+            raise DatabaseNotAllowedError("Set USE_DB=True in your .env file to use forms!")
+
         def parseArgsToSchema(**kwargs):
             fields = []
-        return
+            for name, default in kwargs.items():
+                py_type = type(default) if default is not None else str
+                fields.append({
+                    "name": name,
+                    "type": TYPE_MAP.get(py_type, "text"),
+                    "default": default,
+                    "required": default is None
+                })
+            return {
+                "endpoint": f"{route}/submit",
+                "fields": fields
+            }
+
+        async def make_schema_view():
+            schema = parseArgsToSchema(**kwargs)
+            if not html:
+                return await self.quart.render_template_string('''
+                <auto-form>{{ schema | tojson }}</auto-form>
+                <script src={{ auto_form }}></script>
+                ''', schema=schema)
+            if os.path.isfile(html):
+                return await self.quart.render_template(html, schema=schema)
+            else:
+                return await self.quart.render_template_string(html, schema=schema)
+
+        async def receive_answer():
+            data = await self.quart.request.form
+            print(data["data"])
+            inputs = json.loads(data["data"])
+
+            _data = dict()
+
+            for input in inputs["fields"]:
+                _data[input["name"]] = data[input["name"]]
+            print(_data)
+            return self.quart.redirect("/form")
+
+        self.app.add_url_rule(
+            route, f"{route}", make_schema_view
+        )
+        self.app.add_url_rule(
+            rule=f"{route}/submit", endpoint=f"{route}_form_submit", methods=["POST"], view_func=receive_answer
+        )
 
     def run(self, host='127.0.0.1', port=5000):
         """
