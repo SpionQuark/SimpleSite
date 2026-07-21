@@ -42,8 +42,8 @@ customElements.define(
             const field = document.createElement("input");
             field.name = "data";
             field.value = JSON.stringify(schema);
-            // field.style.display = "hidden";
-            form.append(field)
+            field.style.display = "none";
+            form.appendChild(field);
 
             const submit = document.createElement("button");
             submit.textContent = "Submit";

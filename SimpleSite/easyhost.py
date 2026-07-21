@@ -66,28 +66,27 @@ class App:
             raise RuntimeError(
                 "secure=True requires DEF_USER/DEF_PASS (and SECRET_KEY) to be set in .env"
             )
-
+        path = os.getcwd()
         if not secure:
             if not route.startswith("/"):
                 route = "/" + route
             route = route.replace(" ", "-")
+            if os.path.isfile(os.path.join(path, "templates", html)):
+                async def view(html=html, path=path):
+                    return await self.quart.render_template(os.path.join(path, "templates", html))
 
-            if os.path.isfile(html):
-                async def view(html=html):
-                    return await self.quart.render_template(html)
-
-            elif os.path.isdir(html):
-                async def view(html=html):
-                    return await self.quart.send_from_directory(html, 'index.html')
+            elif os.path.isdir(os.path.join(path, "templates", html)):
+                async def view(html=html, path=path):
+                    return await self.quart.send_from_directory(os.path.join(path, "templates", html), 'index.html')
 
             else:
                 async def view(html=html):
                     return self.quart.Markup(html)
         else:
             @login_required
-            async def view(html=html):
+            async def view(html=html, path=path):
                 try:
-                    return await self.quart.render_template(html)
+                    return await self.quart.render_template(os.path.join(path, "templates", html))
                 except:
                     return self.quart.Markup(html)
         self.app.add_url_rule(route, route, view)
@@ -226,8 +225,8 @@ class App:
         def inject_simplesite_assets() -> dict[str, str]:
             from quart import url_for
             return {
-                "login": url_for("script_inject.static", filename="js/login.js"),
-                "auto_form": url_for("script_inject.static", filename="js/auto-form.js")
+                "login": url_for(endpoint="script_inject.static", filename="js/login.js"),
+                "auto_form": url_for(endpoint="script_inject.static", filename="js/auto-form.js")
             }
 
         from uvicorn import run
