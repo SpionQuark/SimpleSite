@@ -8,12 +8,7 @@ from dotenv import load_dotenv
 from os import getenv
 load_dotenv()
 
-TYPE_MAP = {
-    str   : "text",
-    int   : "number",
-    float : "number",
-    bool  : "checkbox"
-}
+from conf.data import TYPE_MAP
 
 def _caller_dir(dir:str="templates") -> str:
     """
