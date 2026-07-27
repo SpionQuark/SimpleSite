@@ -1,4 +1,4 @@
-import os, json
+import os, json, hmac
 import sys
 import quart
 from quart_auth import QuartAuth, AuthUser, login_required, login_user
@@ -128,7 +128,10 @@ class App:
             if self.db_flag:
                 valid = await dh.check_login(luser, lpassword)
             else:
-                valid = luser == getenv("DEF_USER") and lpassword == getenv("DEF_PASS")
+                # Fix for issue https://github.com/SpionQuark/SimpleSite/issues/1
+                # Old approach (if new one does not work or has some other issues)
+                # valid = luser == getenv("DEF_USER") and lpassword == getenv("DEF_PASS")
+                valid = hmac.compare_digest(luser, getenv("DEF_USER")) and hmac.compare_digest(lpassword, getenv("DEF_PASS"))
 
             if not valid:
                 return self.quart.abort(401)
@@ -144,7 +147,6 @@ class App:
         async def favicon():
             return self.quart.abort(404)
 
-    
     def createForm(self, route:str, html: str = None, **kwargs):
         if not self.db_flag:
             raise DatabaseNotAllowedError("Set USE_DB=True in your .env file to use forms!")

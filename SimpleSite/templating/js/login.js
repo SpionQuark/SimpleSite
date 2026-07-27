@@ -12,7 +12,7 @@ customElements.define(
             this.innerHTML = `
             <form method="post">
             <input name="user" placeholder="Username">
-            <input name="password" type="password" placeholder="Password">
+            <input name="password" type="password" placeholder="Password" min-length="6">
             <button type="submit">Log in</button>'
             </form>`;
         }
