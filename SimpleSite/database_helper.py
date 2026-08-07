@@ -2,6 +2,7 @@ from SimpleSite.database_handler import Database
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
+
 db = Database("./application.db")
 
 pw = PasswordHasher()
