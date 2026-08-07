@@ -36,7 +36,8 @@ class App:
         self.quart = quart
         self.db_flag = _env_flag("USE_DB")
         self.auth = bool(getenv("DEF_USER")) and bool(getenv("DEF_PASS"))
-
+        self.default_style = str(getenv("DEFAULT_STYLE"))
+        self.class_inject = _env_flag("CLASS_INJECT", False)
         if self.auth:
             secret_key = getenv("SECRET_KEY")
             if not secret_key:
